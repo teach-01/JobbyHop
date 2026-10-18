@@ -10,3 +10,5 @@ build/
 **/build/
 coverage/
 *.log
+
+backend/uploads/
