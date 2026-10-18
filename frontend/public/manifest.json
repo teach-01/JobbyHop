@@ -1,0 +1,16 @@
+{
+  "short_name": "JobbyHop",
+  "name": "JobbyHop Event Staffing & Job Platform",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#6d28d9",
+  "display": "standalone",
+  "orientation": "portrait"
+}
