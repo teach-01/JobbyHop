@@ -15,6 +15,7 @@ import AdminRatingModal from '../../components/admin/AdminRatingModal';
 import { useBulkSelection } from '../../hooks/useBulkSelection';
 import { BulkCheckbox, BulkActionToolbar } from '../../components/admin/BulkActionComponents';
 import { exportDetailedRecordsToPdf, exportWorker2PageReportPdf } from '../../utils/printPdfExport';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 import DateFilter from '../../components/common/DateFilter';
 import { DEFAULT_DATE_FILTER, matchesDateFilter } from '../../utils/dateFilterHelper';
 
@@ -485,7 +486,7 @@ export const AdminWorkers = () => {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           {w.profilePhoto ? (
-                            <img src={w.profilePhoto} alt={w.fullName} className="w-9 h-9 rounded-xl object-cover border border-slate-700" />
+                            <img src={resolveAssetUrl(w.profilePhoto)} alt={w.fullName} className="w-9 h-9 rounded-xl object-cover border border-slate-700" />
                           ) : (
                             <div className="w-9 h-9 rounded-xl bg-brand-600/20 border border-brand-600/30 flex items-center justify-center text-brand-400 font-bold">
                               {(w.fullName || 'W')[0].toUpperCase()}
@@ -577,7 +578,7 @@ export const AdminWorkers = () => {
                 <div className="px-1 space-y-2 py-2">
                   <div className="flex items-center gap-4 mb-3">
                     {(detailUser.profile?.profilePhoto || detailUser.profilePhoto) && (
-                      <img src={detailUser.profile?.profilePhoto || detailUser.profilePhoto} alt={detailUser.profile?.fullName || detailUser.fullName}
+                      <img src={resolveAssetUrl(detailUser.profile?.profilePhoto || detailUser.profilePhoto)} alt={detailUser.profile?.fullName || detailUser.fullName}
                         className="w-16 h-16 rounded-2xl object-cover border-2 border-brand-500" />
                     )}
                     <div>

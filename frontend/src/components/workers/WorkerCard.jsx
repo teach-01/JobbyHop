@@ -1,5 +1,6 @@
 import React from 'react';
 import { Star, MapPin, Award, CheckCircle, Clock } from 'lucide-react';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export const WorkerCard = ({ workerProfile, onSelect, selected = false, showAssignBtn = false, onAssign }) => {
   if (!workerProfile) return null;
@@ -12,7 +13,7 @@ export const WorkerCard = ({ workerProfile, onSelect, selected = false, showAssi
     >
       <div className="flex items-start gap-4">
         <img
-          src={workerProfile.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+          src={resolveAssetUrl(workerProfile.profilePhoto) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
           alt={workerProfile.fullName}
           className="w-14 h-14 rounded-2xl object-cover border-2 border-brand-500/40 shrink-0"
         />
