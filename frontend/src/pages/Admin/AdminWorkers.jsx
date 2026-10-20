@@ -64,6 +64,7 @@ export const AdminWorkers = () => {
   const [detailUser, setDetailUser]         = useState(null);
   const [detailLoading, setDetailLoading]   = useState(false);
   const [expandedSection, setExpandedSection] = useState({ basic: true, profile: true, apps: true, assignments: true });
+  const [imgErrors, setImgErrors]           = useState({});
 
   // Manage modal
   const [actionWorker, setActionWorker]     = useState(null);
@@ -485,8 +486,13 @@ export const AdminWorkers = () => {
                       </td>
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          {w.profilePhoto ? (
-                            <img src={resolveAssetUrl(w.profilePhoto)} alt={w.fullName} className="w-9 h-9 rounded-xl object-cover border border-slate-700" />
+                          {w.profilePhoto && !imgErrors[w._id] ? (
+                            <img
+                              src={resolveAssetUrl(w.profilePhoto)}
+                              alt={w.fullName}
+                              className="w-9 h-9 rounded-xl object-cover border border-slate-700"
+                              onError={() => setImgErrors((prev) => ({ ...prev, [w._id]: true }))}
+                            />
                           ) : (
                             <div className="w-9 h-9 rounded-xl bg-brand-600/20 border border-brand-600/30 flex items-center justify-center text-brand-400 font-bold">
                               {(w.fullName || 'W')[0].toUpperCase()}
@@ -577,9 +583,17 @@ export const AdminWorkers = () => {
               {expandedSection.basic && (
                 <div className="px-1 space-y-2 py-2">
                   <div className="flex items-center gap-4 mb-3">
-                    {(detailUser.profile?.profilePhoto || detailUser.profilePhoto) && (
-                      <img src={resolveAssetUrl(detailUser.profile?.profilePhoto || detailUser.profilePhoto)} alt={detailUser.profile?.fullName || detailUser.fullName}
-                        className="w-16 h-16 rounded-2xl object-cover border-2 border-brand-500" />
+                    {(detailUser.profile?.profilePhoto || detailUser.profilePhoto) && !imgErrors['modal-' + detailUser._id] ? (
+                      <img
+                        src={resolveAssetUrl(detailUser.profile?.profilePhoto || detailUser.profilePhoto)}
+                        alt={detailUser.profile?.fullName || detailUser.fullName}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-brand-500"
+                        onError={() => setImgErrors((prev) => ({ ...prev, ['modal-' + detailUser._id]: true }))}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-2xl bg-brand-600/20 border-2 border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-2xl">
+                        {((detailUser.profile?.fullName || detailUser.fullName || 'W')[0]).toUpperCase()}
+                      </div>
                     )}
                     <div>
                       <p className="text-lg font-bold text-white">{detailUser.profile?.fullName || detailUser.fullName}</p>

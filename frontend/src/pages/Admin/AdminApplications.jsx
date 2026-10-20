@@ -17,6 +17,7 @@ import {
   Trash2, RotateCcw as RestoreIcon, AlertOctagon, Printer,
 } from 'lucide-react';
 import { exportDetailedRecordsToPdf } from '../../utils/printPdfExport';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 import DateFilter from '../../components/common/DateFilter';
 import { DEFAULT_DATE_FILTER, matchesDateFilter } from '../../utils/dateFilterHelper';
 
@@ -556,7 +557,7 @@ export const AdminApplications = () => {
                   {/* Worker */}
                   <div className="flex items-center gap-3">
                     <img
-                      src={app.workerProfile?.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                      src={resolveAssetUrl(app.workerProfile?.profilePhoto) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                       alt={app.workerProfile?.fullName}
                       className="w-9 h-9 rounded-lg object-cover border border-brand-500/40 shrink-0"
                     />
@@ -720,7 +721,7 @@ export const AdminApplications = () => {
                           <td className="px-4 py-3.5">
                             <div className="flex items-center gap-2">
                               <img
-                                src={app.workerProfile?.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+                                src={resolveAssetUrl(app.workerProfile?.profilePhoto) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
                                 alt={app.workerProfile?.fullName}
                                 className="w-7 h-7 rounded-lg object-cover border border-slate-700 shrink-0"
                               />

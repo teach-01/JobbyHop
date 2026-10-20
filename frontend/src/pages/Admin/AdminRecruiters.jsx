@@ -15,6 +15,7 @@ import AdminRatingModal from '../../components/admin/AdminRatingModal';
 import { useBulkSelection } from '../../hooks/useBulkSelection';
 import { BulkCheckbox, BulkActionToolbar } from '../../components/admin/BulkActionComponents';
 import { exportDetailedRecordsToPdf } from '../../utils/printPdfExport';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 import DateFilter from '../../components/common/DateFilter';
 import { DEFAULT_DATE_FILTER, matchesDateFilter } from '../../utils/dateFilterHelper';
 
@@ -370,7 +371,7 @@ export const AdminRecruiters = () => {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
                           {rec.companyLogo ? (
-                            <img src={rec.companyLogo} alt={rec.companyName} className="w-9 h-9 rounded-xl object-cover border border-slate-700" />
+                            <img src={resolveAssetUrl(rec.companyLogo)} alt={rec.companyName} className="w-9 h-9 rounded-xl object-cover border border-slate-700" />
                           ) : (
                             <div className="w-9 h-9 rounded-xl bg-brand-600/20 border border-brand-600/30 flex items-center justify-center">
                               <Building2 className="w-4 h-4 text-brand-400" />
@@ -474,7 +475,7 @@ export const AdminRecruiters = () => {
                 <div className="px-1 space-y-2 py-2">
                   {(detailUser.profile?.companyLogo) && (
                     <img
-                      src={detailUser.profile.companyLogo}
+                      src={resolveAssetUrl(detailUser.profile.companyLogo)}
                       alt="Company Logo"
                       className="w-16 h-16 rounded-xl object-contain border border-slate-700 bg-slate-900"
                     />

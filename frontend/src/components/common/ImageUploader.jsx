@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, X, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { validateAndProcessImageFile, MAX_PHOTO_SIZE_BYTES } from '../../utils/imageCompression';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export const ImageUploader = ({
   value,
@@ -12,12 +13,13 @@ export const ImageUploader = ({
   lockedDescription = 'Your profile photo was verified during worker registration. Photo changes, replacements, and removal are permanently locked for account integrity and security.',
   onError,
 }) => {
-  const [preview, setPreview] = useState(value || '');
+  const [preview, setPreview] = useState(resolveAssetUrl(value) || '');
   const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    setPreview(value || '');
+    setPreview(resolveAssetUrl(value) || '');
   }, [value]);
+
 
   const handleFileChange = async (e) => {
     if (locked) return;

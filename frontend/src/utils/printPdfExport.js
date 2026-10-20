@@ -66,26 +66,9 @@ const SHARED_CSS = `
   }
 `;
 
-export function resolveAssetUrl(url) {
-  if (!url || typeof url !== 'string') return '';
-  const trimmed = url.trim();
-  if (!trimmed) return '';
-  if (
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://') ||
-    trimmed.startsWith('data:') ||
-    trimmed.startsWith('blob:')
-  ) {
-    return trimmed;
-  }
-  const origin = (typeof window !== 'undefined' && window.location?.origin)
-    ? window.location.origin
-    : '';
-  if (trimmed.startsWith('/')) {
-    return `${origin}${trimmed}`;
-  }
-  return `${origin}/${trimmed}`;
-}
+import { resolveAssetUrl } from './assetUrl';
+export { resolveAssetUrl };
+
 
 /**
  * isRealUploadedImage — returns true ONLY when `url` is a genuine uploaded

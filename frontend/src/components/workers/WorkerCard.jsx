@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Star, MapPin, Award, CheckCircle, Clock } from 'lucide-react';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export const WorkerCard = ({ workerProfile, onSelect, selected = false, showAssignBtn = false, onAssign }) => {
+  const [imgError, setImgError] = useState(false);
   if (!workerProfile) return null;
+
+  const photoUrl = resolveAssetUrl(workerProfile.profilePhoto);
+  const initials = (workerProfile.fullName || 'W')[0].toUpperCase();
 
   return (
     <div
@@ -12,11 +16,18 @@ export const WorkerCard = ({ workerProfile, onSelect, selected = false, showAssi
       }`}
     >
       <div className="flex items-start gap-4">
-        <img
-          src={resolveAssetUrl(workerProfile.profilePhoto) || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
-          alt={workerProfile.fullName}
-          className="w-14 h-14 rounded-2xl object-cover border-2 border-brand-500/40 shrink-0"
-        />
+        {photoUrl && !imgError ? (
+          <img
+            src={photoUrl}
+            alt={workerProfile.fullName}
+            className="w-14 h-14 rounded-2xl object-cover border-2 border-brand-500/40 shrink-0"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-2xl bg-brand-600/20 border-2 border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-xl shrink-0">
+            {initials}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <h4 className="text-base font-bold text-white truncate">{workerProfile.fullName}</h4>
