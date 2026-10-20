@@ -131,16 +131,23 @@ async function saveBase64Image(photoString, options = {}) {
         console.log(`[ImageStorage] Uploaded image to Cloudinary folder "${folder}": ${result.secure_url}`);
         return result.secure_url;
       }
-      console.warn('[ImageStorage] Cloudinary response missing secure_url, falling back to local storage.');
+      throw new Error('Cloudinary response missing secure_url.');
     } catch (cldErr) {
-      console.error('[ImageStorage] Cloudinary upload failed, falling back to local storage:', cldErr?.message || 'Unknown error');
-      // Fall through to local disk storage
+      console.error('[ImageStorage] Cloudinary upload failed:', cldErr?.message || 'Unknown error');
+      // In production, NEVER fall back to local ephemeral disk storage
+      if (process.env.NODE_ENV === 'production' || options.throwOnError) {
+        throw new Error('Cloudinary upload failed: ' + (cldErr?.message || 'Unknown error'));
+      }
+      // In test/local-dev mode only, fall through to local disk storage if configured
     }
   } else {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Cloudinary credentials are not configured in production environment.');
+    }
     console.log('[ImageStorage] Cloudinary not configured in environment. Using local storage fallback.');
   }
 
-  // 2. Fallback: Save to local filesystem
+  // 2. Fallback: Save to local filesystem (local dev / test mode only)
   const uniqueSuffix = Date.now() + '-' + crypto.randomBytes(6).toString('hex');
   const filename = `${options.prefix || 'profile-'}${uniqueSuffix}${ext}`;
   const filepath = path.join(UPLOADS_DIR, filename);
@@ -148,6 +155,23 @@ async function saveBase64Image(photoString, options = {}) {
   await fs.promises.writeFile(filepath, buffer);
 
   return `/uploads/${filename}`;
+}
+
+/**
+ * Saves a binary image Buffer directly to Cloudinary or local storage.
+ * @param {Buffer} buffer - Binary image buffer.
+ * @param {string} [mimeType] - Mime type of the image.
+ * @param {object} [options] - Optional settings (folder, prefix).
+ * @returns {Promise<string>} The public URL or path for the saved image.
+ */
+async function saveImageBuffer(buffer, mimeType, options = {}) {
+  if (!buffer || buffer.length === 0) {
+    throw new Error('Empty image buffer.');
+  }
+  const detectedMime = detectImageMimeFromBuffer(buffer);
+  const mime = detectedMime || mimeType || 'image/jpeg';
+  const base64Data = buffer.toString('base64');
+  return saveBase64Image(`data:${mime};base64,${base64Data}`, options);
 }
 
 /**
@@ -241,6 +265,7 @@ module.exports = {
   getCloudinary,
   extractCloudinaryPublicId,
   saveBase64Image,
+  saveImageBuffer,
   deleteSavedImage,
   duplicateSavedImage,
 };

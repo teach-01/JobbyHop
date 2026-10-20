@@ -15,9 +15,11 @@ export const ImageUploader = ({
 }) => {
   const [preview, setPreview] = useState(resolveAssetUrl(value) || '');
   const [errorMessage, setErrorMessage] = useState('');
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     setPreview(resolveAssetUrl(value) || '');
+    setImgError(false);
   }, [value]);
 
 
@@ -94,15 +96,17 @@ export const ImageUploader = ({
         /* ── READ-ONLY / LOCKED PROFILE PHOTO VIEW ───────────────────────── */
         <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-900/40 border border-slate-800">
           <div className="relative w-28 h-28 rounded-2xl overflow-hidden border-2 border-slate-700 bg-slate-950 shadow-inner shrink-0">
-            {preview ? (
+            {preview && !imgError ? (
               <img
                 src={preview}
                 alt="Locked profile photo"
                 className="w-full h-full object-cover select-none pointer-events-none"
+                onError={() => setImgError(true)}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-600">
-                <Lock className="w-8 h-8" />
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-500 bg-slate-900">
+                <Lock className="w-6 h-6 mb-1 text-slate-600" />
+                <span className="text-[9px] text-slate-500">No Photo</span>
               </div>
             )}
             <div className="absolute inset-0 bg-slate-950/20 backdrop-brightness-95 pointer-events-none" />
@@ -124,9 +128,14 @@ export const ImageUploader = ({
       ) : (
         /* ── EDITABLE / REGISTRATION PHOTO UPLOAD VIEW ────────────────────── */
         <div className="space-y-2">
-          {preview ? (
+          {preview && !imgError ? (
             <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-brand-500/50 shadow-lg group">
-              <img src={preview} alt="Upload preview" className="w-full h-full object-cover" />
+              <img
+                src={preview}
+                alt="Upload preview"
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
               <button
                 type="button"
                 onClick={handleRemove}

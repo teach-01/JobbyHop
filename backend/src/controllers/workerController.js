@@ -9,7 +9,7 @@ const { createNotification } = require('../services/notificationService');
 const { logAuditEvent } = require('../services/auditService');
 const { JOB_STATUS, APPLICATION_STATUS, ASSIGNMENT_STATUS, ATTENDANCE_STATUS, ROLES } = require('../config/constants');
 const { validateWorkerProfilePhoto } = require('../utils/imageValidator');
-const { saveBase64Image } = require('../utils/imageStorage');
+const { saveBase64Image, saveImageBuffer } = require('../utils/imageStorage');
 
 // Get worker profile
 exports.getProfile = async (req, res, next) => {
@@ -41,8 +41,7 @@ exports.updateProfile = async (req, res, next) => {
     const incomingProfilePhoto = req.body.profilePhoto ?? req.body.photo;
 
     // STRICT IMMUTABILITY RULES:
-    // If these fields already exist on the profile, any attempt to change, replace,
-    // or remove them must be rejected by the backend.
+    // Legal Name, Date of Birth, and Phone Number cannot be changed after verification.
     const attemptedModifications = [];
 
     // Full Legal Name immutability
@@ -73,40 +72,10 @@ exports.updateProfile = async (req, res, next) => {
       }
     }
 
-    // Profile Photo immutability
-    if (profile.profilePhoto && incomingProfilePhoto !== undefined) {
-      const incomingTrimmed = String(incomingProfilePhoto).trim();
-      const existingTrimmed = String(profile.profilePhoto).trim();
-      if (incomingTrimmed !== existingTrimmed) {
-        let isSameImage = false;
-        if (existingTrimmed.startsWith('/uploads/') && incomingTrimmed.startsWith('data:')) {
-          try {
-            const fs = require('fs');
-            const path = require('path');
-            const uploadsDir = path.join(__dirname, '../../uploads');
-            const filepath = path.join(uploadsDir, path.basename(existingTrimmed));
-            if (fs.existsSync(filepath)) {
-              const savedBuffer = fs.readFileSync(filepath);
-              const base64Data = incomingTrimmed.replace(/^data:[^;]+;base64,/i, '');
-              const incomingBuffer = Buffer.from(base64Data, 'base64');
-              if (Buffer.compare(savedBuffer, incomingBuffer) === 0) {
-                isSameImage = true;
-              }
-            }
-          } catch (e) {
-            // ignore
-          }
-        }
-        if (!isSameImage) {
-          attemptedModifications.push('Profile Photo');
-        }
-      }
-    }
-
     if (attemptedModifications.length > 0) {
       return res.status(403).json({
         success: false,
-        message: 'Legal name, date of birth, phone number and profile photo cannot be changed after verification.',
+        message: 'Legal name, date of birth, and phone number cannot be changed after verification.',
       });
     }
 
@@ -120,8 +89,10 @@ exports.updateProfile = async (req, res, next) => {
     if (!profile.phone && incomingPhone) {
       profile.phone = String(incomingPhone).trim();
     }
-    if (!profile.profilePhoto && incomingProfilePhoto && String(incomingProfilePhoto).trim() !== '') {
-      const photoValidation = validateWorkerProfilePhoto(incomingProfilePhoto);
+
+    // Profile Photo Update / Replacement (via multipart file or base64 data URI):
+    if (req.file) {
+      const photoValidation = validateWorkerProfilePhoto(req.file.buffer);
       if (!photoValidation.valid) {
         return res.status(400).json({
           success: false,
@@ -129,12 +100,39 @@ exports.updateProfile = async (req, res, next) => {
         });
       }
       try {
-        profile.profilePhoto = await saveBase64Image(String(incomingProfilePhoto).trim());
+        profile.profilePhoto = await saveImageBuffer(req.file.buffer, req.file.mimetype, {
+          folder: 'jobbyhop/profiles',
+          throwOnError: true,
+        });
       } catch (err) {
         return res.status(400).json({
           success: false,
-          message: 'Failed to process profile photo. Ensure it is a valid image.',
+          message: err?.message || 'Failed to upload profile photo to Cloudinary.',
         });
+      }
+    } else if (incomingProfilePhoto && String(incomingProfilePhoto).trim() !== '') {
+      const incomingTrimmed = String(incomingProfilePhoto).trim();
+      if (incomingTrimmed.startsWith('data:')) {
+        const photoValidation = validateWorkerProfilePhoto(incomingTrimmed);
+        if (!photoValidation.valid) {
+          return res.status(400).json({
+            success: false,
+            message: photoValidation.message,
+          });
+        }
+        try {
+          profile.profilePhoto = await saveBase64Image(incomingTrimmed, {
+            folder: 'jobbyhop/profiles',
+            throwOnError: true,
+          });
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            message: err?.message || 'Failed to upload profile photo to Cloudinary.',
+          });
+        }
+      } else if (incomingTrimmed.startsWith('https://res.cloudinary.com/')) {
+        profile.profilePhoto = incomingTrimmed;
       }
     }
 
@@ -582,6 +580,73 @@ exports.requestAssignmentCancellation = async (req, res, next) => {
       success: true,
       message: 'Cancellation request submitted to Admin.',
       cancellationRequest: cancelReq,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Dedicated worker profile photo upload endpoint
+exports.uploadPhoto = async (req, res, next) => {
+  try {
+    let profile = await WorkerProfile.findOne({ userId: req.user._id });
+    if (!profile) {
+      return res.status(404).json({ success: false, message: 'Worker profile not found.' });
+    }
+
+    let newPhotoUrl = '';
+    if (req.file) {
+      const photoValidation = validateWorkerProfilePhoto(req.file.buffer);
+      if (!photoValidation.valid) {
+        return res.status(400).json({ success: false, message: photoValidation.message });
+      }
+      try {
+        newPhotoUrl = await saveImageBuffer(req.file.buffer, req.file.mimetype, {
+          folder: 'jobbyhop/profiles',
+          throwOnError: true,
+        });
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: err?.message || 'Failed to upload profile photo to Cloudinary.',
+        });
+      }
+    } else if (req.body.profilePhoto || req.body.photo) {
+      const photoData = String(req.body.profilePhoto || req.body.photo).trim();
+      if (!photoData.startsWith('data:') && !photoData.startsWith('https://res.cloudinary.com/')) {
+        return res.status(400).json({ success: false, message: 'Invalid profile photo data.' });
+      }
+      if (photoData.startsWith('data:')) {
+        const photoValidation = validateWorkerProfilePhoto(photoData);
+        if (!photoValidation.valid) {
+          return res.status(400).json({ success: false, message: photoValidation.message });
+        }
+        try {
+          newPhotoUrl = await saveBase64Image(photoData, {
+            folder: 'jobbyhop/profiles',
+            throwOnError: true,
+          });
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            message: err?.message || 'Failed to upload profile photo to Cloudinary.',
+          });
+        }
+      } else {
+        newPhotoUrl = photoData;
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'No photo file or data provided.' });
+    }
+
+    profile.profilePhoto = newPhotoUrl;
+    await profile.save();
+
+    res.json({
+      success: true,
+      message: 'Profile photo updated successfully',
+      profilePhoto: newPhotoUrl,
+      profile,
     });
   } catch (error) {
     next(error);

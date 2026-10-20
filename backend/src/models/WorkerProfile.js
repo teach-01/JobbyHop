@@ -88,7 +88,6 @@ workerProfileSchema.post('init', function () {
     fullName: this.fullName || null,
     dob: this.dob ? new Date(this.dob).toISOString().split('T')[0] : null,
     phone: this.phone || null,
-    profilePhoto: this.profilePhoto || null,
   };
 });
 
@@ -96,19 +95,16 @@ workerProfileSchema.post('init', function () {
 workerProfileSchema.pre('save', function (next) {
   if (!this.isNew && this._original) {
     if (this._original.fullName && this.isModified('fullName') && this.fullName?.trim() !== this._original.fullName?.trim()) {
-      return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
+      return next(new Error('Legal name, date of birth, and phone number cannot be changed after verification.'));
     }
     if (this._original.dob && this.isModified('dob')) {
       const newDobStr = this.dob ? new Date(this.dob).toISOString().split('T')[0] : '';
       if (newDobStr !== this._original.dob) {
-        return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
+        return next(new Error('Legal name, date of birth, and phone number cannot be changed after verification.'));
       }
     }
     if (this._original.phone && this.isModified('phone') && this.phone?.trim() !== this._original.phone?.trim()) {
-      return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
-    }
-    if (this._original.profilePhoto && this.isModified('profilePhoto') && this.profilePhoto?.trim() !== this._original.profilePhoto?.trim()) {
-      return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
+      return next(new Error('Legal name, date of birth, and phone number cannot be changed after verification.'));
     }
   }
   next();
@@ -123,32 +119,28 @@ workerProfileSchema.pre(['updateOne', 'findOneAndUpdate', 'updateMany'], async f
   const hasImmutableFieldUpdate =
     setFields.fullName !== undefined ||
     setFields.dob !== undefined ||
-    setFields.phone !== undefined ||
-    setFields.profilePhoto !== undefined;
+    setFields.phone !== undefined;
 
   if (hasImmutableFieldUpdate) {
     const doc = await this.model.findOne(this.getQuery()).lean();
     if (doc) {
       if (doc.fullName && setFields.fullName !== undefined && setFields.fullName?.trim() !== doc.fullName?.trim()) {
-        return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
+        return next(new Error('Legal name, date of birth, and phone number cannot be changed after verification.'));
       }
       if (doc.dob && setFields.dob !== undefined) {
         const docDob = new Date(doc.dob).toISOString().split('T')[0];
         const newDob = setFields.dob ? new Date(setFields.dob).toISOString().split('T')[0] : '';
         if (newDob !== docDob) {
-          return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
+          return next(new Error('Legal name, date of birth, and phone number cannot be changed after verification.'));
         }
       }
       if (doc.phone && setFields.phone !== undefined && setFields.phone?.trim() !== doc.phone?.trim()) {
-        return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
-      }
-      if (doc.profilePhoto && setFields.profilePhoto !== undefined && setFields.profilePhoto?.trim() !== doc.profilePhoto?.trim()) {
-        return next(new Error('Legal name, date of birth, phone number and profile photo cannot be changed after verification.'));
+        return next(new Error('Legal name, date of birth, and phone number cannot be changed after verification.'));
       }
     }
   }
   next();
 });
 
-module.exports = mongoose.model('WorkerProfile', workerProfileSchema);
+module.exports = mongoose.models.WorkerProfile || mongoose.model('WorkerProfile', workerProfileSchema);
 

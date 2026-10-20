@@ -38,12 +38,32 @@ function detectImageMimeFromBuffer(buffer) {
   return null;
 }
 
-function validateWorkerProfilePhoto(photoString) {
-  if (!photoString || typeof photoString !== 'string' || photoString.trim() === '') {
+function validateWorkerProfilePhoto(photoInput) {
+  if (!photoInput) {
     return { valid: false, message: 'Worker profile photo is required.' };
   }
 
-  const trimmed = photoString.trim();
+  // If photoInput is a Buffer (e.g. from multer req.file.buffer)
+  if (Buffer.isBuffer(photoInput)) {
+    if (photoInput.length === 0) {
+      return { valid: false, message: 'Worker profile photo is required.' };
+    }
+    const MAX_SIZE = 1000000;
+    if (photoInput.length > MAX_SIZE) {
+      return { valid: false, message: 'Profile photo must be 1MB or smaller.' };
+    }
+    const detectedMime = detectImageMimeFromBuffer(photoInput);
+    if (!detectedMime) {
+      return { valid: false, message: 'Only JPG, PNG, and WEBP formats are allowed for profile photo.' };
+    }
+    return { valid: true, mime: detectedMime, size: photoInput.length };
+  }
+
+  if (typeof photoInput !== 'string' || photoInput.trim() === '') {
+    return { valid: false, message: 'Worker profile photo is required.' };
+  }
+
+  const trimmed = photoInput.trim();
 
   // If it's an external HTTP/HTTPS URL (e.g., existing records or testing fixtures)
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {

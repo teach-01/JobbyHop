@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getProfile,
   updateProfile,
+  uploadPhoto,
   updateAvailability,
   getAvailableJobs,
   getJobDetails,
@@ -14,6 +15,7 @@ const {
 } = require('../controllers/workerController');
 const { protect, requireRole } = require('../middleware/auth');
 const { ROLES } = require('../config/constants');
+const upload = require('../middleware/upload');
 
 const router = express.Router();
 
@@ -21,7 +23,9 @@ router.use(protect);
 router.use(requireRole(ROLES.WORKER));
 
 router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
+router.put('/profile', upload.single('photo'), updateProfile);
+router.put('/photo', upload.single('photo'), uploadPhoto);
+router.post('/photo', upload.single('photo'), uploadPhoto);
 router.put('/availability', updateAvailability);
 
 router.get('/jobs', getAvailableJobs);

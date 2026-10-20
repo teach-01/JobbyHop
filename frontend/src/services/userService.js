@@ -48,9 +48,31 @@ export const userService = {
       if (res && res.success) {
         return { success: true, data: res.profile };
       }
+      return { success: false, message: res?.message || 'Failed to update profile' };
     } catch (e) {
       console.error('API request failed:', e);
       return { success: false, message: typeof e === 'string' ? e : 'Operation failed' };
+    }
+  },
+
+  // Upload or replace worker profile photo
+  uploadWorkerPhoto: async (formDataOrBase64) => {
+    try {
+      let res;
+      if (formDataOrBase64 instanceof FormData) {
+        res = await API.put('/worker/photo', formDataOrBase64, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      } else {
+        res = await API.put('/worker/photo', { profilePhoto: formDataOrBase64 });
+      }
+      if (res && res.success) {
+        return { success: true, data: res.profile, profilePhoto: res.profilePhoto };
+      }
+      return { success: false, message: res?.message || 'Failed to upload photo' };
+    } catch (e) {
+      console.error('API request failed:', e);
+      return { success: false, message: typeof e === 'string' ? e : 'Photo upload failed' };
     }
   },
 

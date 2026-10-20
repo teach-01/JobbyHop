@@ -100,17 +100,22 @@ export const WorkerProfile = () => {
     try {
       const res = await userService.updateWorkerProfile(user._id, updatedData);
       if (res && res.success) {
-        updateUserProfile(res.data || updatedData);
+        const savedProfile = res.data || updatedData;
+        updateUserProfile(savedProfile);
+        setFormData((prev) => ({
+          ...prev,
+          profilePhoto: savedProfile.profilePhoto || prev.profilePhoto,
+        }));
         showToast('Worker profile updated successfully!', 'success');
       } else {
         showToast(
-          res?.message || 'Legal name, date of birth, phone number and profile photo cannot be changed after verification.',
+          res?.message || 'Failed to update profile.',
           'error'
         );
       }
     } catch (err) {
       showToast(
-        err?.message || 'Legal name, date of birth, phone number and profile photo cannot be changed after verification.',
+        err?.message || 'Failed to update profile.',
         'error'
       );
     } finally {
@@ -139,20 +144,20 @@ export const WorkerProfile = () => {
           <ShieldCheck className="w-4 h-4" />
         </div>
         <div className="space-y-1 text-xs">
-          <p className="font-bold text-slate-200">Verified Personal Details are Permanently Locked</p>
+          <p className="font-bold text-slate-200">Verified Personal Details Policy</p>
           <p className="text-slate-400 leading-relaxed text-[11px]">
-            In compliance with event staffing verification standards, your <span className="text-slate-300 font-medium">Full Legal Name</span>, <span className="text-slate-300 font-medium">Date of Birth</span>, <span className="text-slate-300 font-medium">Phone Number</span>, and <span className="text-slate-300 font-medium">Profile Photo</span> cannot be changed or removed once saved. You can continue updating your location, skills, experience, and preferred event types below.
+            In compliance with event staffing verification standards, your <span className="text-slate-300 font-medium">Full Legal Name</span>, <span className="text-slate-300 font-medium">Date of Birth</span>, and <span className="text-slate-300 font-medium">Phone Number</span> cannot be changed once saved. You can upload or replace your profile photo, and update your location, skills, experience, and preferred event types below.
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card p-8 rounded-3xl border border-slate-800 space-y-6">
-        {/* Profile Photo - Permanently Locked & Read-Only */}
+        {/* Profile Photo - Upload / Replace to Cloudinary */}
         <ImageUploader
           label="Profile Photo *"
           value={formData.profilePhoto}
-          onChange={() => {}}
-          locked={isPhotoLocked || true}
+          onChange={(val) => setFormData((prev) => ({ ...prev, profilePhoto: val }))}
+          locked={false}
         />
 
         {/* Row 1: Full Legal Name & Location */}

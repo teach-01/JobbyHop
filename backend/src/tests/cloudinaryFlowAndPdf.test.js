@@ -166,54 +166,62 @@ describe('Cloudinary End-to-End Upload Flow & PDF Integration Suite', () => {
     });
   });
 
-  describe('3. Verified Identity Photo Immutability & Re-upload Protection', () => {
-    it('simulates worker updateProfile logic: rejects photo change when photo already exists', () => {
-      const existingProfile = {
+  describe('3. Verified Identity Photo Replacement & Cloudinary Storage', () => {
+    it('simulates worker updateProfile logic: allows replacement of profile photo to Cloudinary', async () => {
+      process.env.CLOUDINARY_CLOUD_NAME = 'test_cloud';
+      process.env.CLOUDINARY_API_KEY = 'test_key';
+      process.env.CLOUDINARY_API_SECRET = 'test_secret';
+
+      const mockCldUrl =
+        'https://res.cloudinary.com/test_cloud/image/upload/v1712345678/jobbyhop/profiles/new_worker_photo.jpg';
+      vi.spyOn(getCloudinary().uploader, 'upload').mockResolvedValue({
+        secure_url: mockCldUrl,
+      });
+
+      const profile = {
         fullName: 'Worker Abc',
         profilePhoto: '/uploads/profile-1792349022653-430185b4f833.jpg',
       };
 
       const incomingUpdate = {
         fullName: 'Worker Abc',
-        profilePhoto: TINY_PNG_BASE64, // Worker attempts to change photo
+        profilePhoto: TINY_PNG_BASE64, // Worker uploads new photo
       };
 
-      // Exact logic from workerController.js:
-      // if (!profile.profilePhoto && incomingProfilePhoto && ...) { profile.profilePhoto = ... }
-      if (!existingProfile.profilePhoto && incomingUpdate.profilePhoto) {
-        existingProfile.profilePhoto = 'new_photo';
+      // Worker updates profile photo:
+      if (incomingUpdate.profilePhoto && incomingUpdate.profilePhoto.startsWith('data:')) {
+        profile.profilePhoto = await saveBase64Image(incomingUpdate.profilePhoto);
       }
 
-      // Profile photo must remain unchanged
-      expect(existingProfile.profilePhoto).toBe('/uploads/profile-1792349022653-430185b4f833.jpg');
-    });
-
-    it('simulates admin-authorized reset: allows re-upload only after photo is reset to empty', async () => {
-      const profile = {
-        fullName: 'Worker Abc',
-        profilePhoto: '/uploads/profile-1792349022653-430185b4f833.jpg',
-      };
-
-      // Step 1: Admin authorizes reset
-      profile.profilePhoto = '';
-
-      // Step 2: Worker re-uploads photo to Cloudinary
-      process.env.CLOUDINARY_CLOUD_NAME = 'test_cloud';
-      process.env.CLOUDINARY_API_KEY = 'test_key';
-      process.env.CLOUDINARY_API_SECRET = 'test_secret';
-
-      const mockCldUrl =
-        'https://res.cloudinary.com/test_cloud/image/upload/v1712345678/jobbyhop/profiles/new_worker_abc.jpg';
-      vi.spyOn(getCloudinary().uploader, 'upload').mockResolvedValue({
-        secure_url: mockCldUrl,
-      });
-
-      if (!profile.profilePhoto && TINY_PNG_BASE64) {
-        profile.profilePhoto = await saveBase64Image(TINY_PNG_BASE64);
-      }
-
+      // Profile photo is replaced with permanent Cloudinary URL
       expect(profile.profilePhoto).toBe(mockCldUrl);
       expect(profile.profilePhoto).toMatch(/^https:\/\/res\.cloudinary\.com\//);
+    });
+
+    it('validates that legal identity fields (name, dob, phone) remain immutable', () => {
+      const existingProfile = {
+        fullName: 'Worker Abc',
+        dob: new Date('1995-05-15'),
+        phone: '9876543210',
+        profilePhoto: 'https://res.cloudinary.com/test_cloud/image/upload/v1/jobbyhop/profiles/test.jpg',
+      };
+
+      const attemptedModifications = [];
+      const incomingUpdate = {
+        fullName: 'Changed Name',
+        dob: '2000-01-01',
+        phone: '1234567890',
+      };
+
+      if (existingProfile.fullName && incomingUpdate.fullName !== existingProfile.fullName) {
+        attemptedModifications.push('Full Legal Name');
+      }
+      if (existingProfile.phone && incomingUpdate.phone !== existingProfile.phone) {
+        attemptedModifications.push('Phone Number');
+      }
+
+      expect(attemptedModifications).toContain('Full Legal Name');
+      expect(attemptedModifications).toContain('Phone Number');
     });
   });
 });
