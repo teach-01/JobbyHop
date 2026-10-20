@@ -1,12 +1,6 @@
 {
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": { "outputDirectory": "dist" }
-    }
-  ],
-  "routes": [
-    { "src": "/(?!assets/).*", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
-}
+}
