@@ -1,6 +1,10 @@
 {
+  "env": {
+    "VITE_API_URL": "https://jobbyhop-backend.onrender.com",
+    "VITE_BACKEND_URL": "https://jobbyhop-backend.onrender.com"
+  },
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
-}
+}
