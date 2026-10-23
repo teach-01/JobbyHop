@@ -39,6 +39,12 @@ API.interceptors.response.use(
         window.location.href = '/login?session_expired=true';
       }
     }
+    // Friendly message for request timeouts (Axios ECONNABORTED / ERR_CANCELED)
+    if (error.code === 'ECONNABORTED' || error.code === 'ERR_CANCELED') {
+      return Promise.reject(
+        'The server is taking too long to respond. Please try again in a moment.'
+      );
+    }
     return Promise.reject(
       error.response?.data?.message || error.message || 'An unexpected error occurred'
     );

@@ -17,6 +17,12 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Trust the first proxy hop in front of the app (Render's load balancer / TLS terminator).
+// Render, like Heroku/Railway, forwards the real client IP via X-Forwarded-For.
+// Setting this to 1 (not `true`) means only the immediate upstream proxy is trusted —
+// express-rate-limit v7 requires this to be set, or it throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR.
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
