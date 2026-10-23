@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jobbyhop-shell-v2';
+const CACHE_NAME = 'jobbyhop-shell-v3';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -23,9 +23,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first strategy for API requests to ensure security and prevent stale payment/job data
+  // Bypass service worker for all API requests so the browser handles them natively
   if (event.request.url.includes('/api/')) {
-    event.respondWith(fetch(event.request));
     return;
   }
 

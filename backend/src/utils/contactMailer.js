@@ -35,6 +35,11 @@ function getContactTransporter() {
       user,
       pass,
     },
+    // Bounded timeouts to prevent backend from hanging indefinitely on SMTP
+    connectionTimeout: 10000, // 10s max to establish TCP connection
+    greetingTimeout: 10000,   // 10s max to wait for SMTP greeting
+    socketTimeout: 15000,     // 15s max for socket inactivity
+    family: 4,                // Force IPv4 to prevent 120s IPv6 connection timeout on cloud hosts like Render
   });
 
   return _contactTransporter;
@@ -206,14 +211,20 @@ async function sendContactEmail({ name, email, role, subject, message }) {
 </html>
   `.trim();
 
-  await transporter.sendMail({
-    from: fromHeader,
-    to: recipient,
-    replyTo: replyToHeader,
-    subject: emailSubject,
-    text: textBody,
-    html: htmlBody,
-  });
+  try {
+    await transporter.sendMail({
+      from: fromHeader,
+      to: recipient,
+      replyTo: replyToHeader,
+      subject: emailSubject,
+      text: textBody,
+      html: htmlBody,
+    });
+  } catch (error) {
+    // Invalidate cached transporter on error to prevent reusing dead/stale connections
+    _contactTransporter = null;
+    throw error;
+  }
 }
 
 module.exports = {
